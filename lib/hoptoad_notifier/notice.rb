@@ -1,4 +1,4 @@
-require 'builder'
+require 'nokogiri'
 
 module HoptoadNotifier
   class Notice
@@ -103,59 +103,55 @@ module HoptoadNotifier
 
     # Converts the given notice to XML
     def to_xml
-      builder = Builder::XmlMarkup.new
-      builder.instruct!
-      xml = builder.notice(:version => HoptoadNotifier::API_VERSION) do |notice|
-        notice.tag!("api-key", api_key)
-        notice.notifier do |notifier|
-          notifier.name(notifier_name)
-          notifier.version(notifier_version)
-          notifier.url(notifier_url)
-        end
-        notice.error do |error|
-          error.tag!('class', error_class)
-          error.message(error_message)
-          error.backtrace do |backtrace|
-            self.backtrace.lines.each do |line|
-              backtrace.line(:number => line.number,
-                             :file   => line.file,
-                             :method => line.method)
-            end
+      builder = Nokogiri::XML::Builder.new do |xml|
+        xml.notice(:version => HoptoadNotifier::API_VERSION) {
+          xml.send(:"api-key", api_key)
+          xml.notifier {
+            xml.name notifier_name
+            xml.version notifier_version
+            xml.url notifier_url
+          }
+          xml.error {
+            xml.class_ error_class
+            xml.message error_message
+            xml.backtrace {
+              self.backtrace.lines.each do |line|
+                xml.line( :number => line.number,
+                          :file   => line.file,
+                          :method => line.method)
+              end 
+            }
+          }
+          if url || controller || action || !parameters.blank? ||
+              !cgi_data.blank? || !session_data.blank?
+            xml.request {
+              xml.url url
+              xml.component controller
+              xml.action action
+              unless parameters.nil? || parameters.empty?
+                xml.params {
+                  xml_vars_for(xml, parameters)
+                }
+              end
+              unless session_data.nil? || session_data.empty?
+                xml.session {
+                  xml_vars_for(xml, session_data)
+                }
+              end
+              unless cgi_data.nil? || cgi_data.empty?
+                xml.send(:"cgi-data") {
+                  xml_vars_for(xml, cgi_data)
+                }
+              end
+            }
           end
-        end
-        if url ||
-            controller ||
-            action ||
-            !parameters.blank? ||
-            !cgi_data.blank? ||
-            !session_data.blank?
-          notice.request do |request|
-            request.url(url)
-            request.component(controller)
-            request.action(action)
-            unless parameters.nil? || parameters.empty?
-              request.params do |params|
-                xml_vars_for(params, parameters)
-              end
-            end
-            unless session_data.nil? || session_data.empty?
-              request.session do |session|
-                xml_vars_for(session, session_data)
-              end
-            end
-            unless cgi_data.nil? || cgi_data.empty?
-              request.tag!("cgi-data") do |cgi_datum|
-                xml_vars_for(cgi_datum, cgi_data)
-              end
-            end
-          end
-        end
-        notice.tag!("server-environment") do |env|
-          env.tag!("project-root", project_root)
-          env.tag!("environment-name", environment_name)
-        end
+          xml.send(:"server-environment") {
+            xml.send(:"project-root", project_root)
+            xml.send(:"environment-name", environment_name)
+          }          
+        }
       end
-      xml.to_s
+      builder.to_xml
     end
 
     # Determines if this notice should be ignored
@@ -296,12 +292,14 @@ module HoptoadNotifier
       end
     end
 
-    def xml_vars_for(builder, hash)
+    def xml_vars_for(xml, hash)
       hash.each do |key, value|
         if value.respond_to?(:to_hash)
-          builder.var(:key => key){|b| xml_vars_for(b, value.to_hash) }
+          xml.send(:var, {:key => key}) {
+            xml_vars_for(xml, value.to_hash)
+          }
         else
-          builder.var(value.to_s, :key => key)
+          xml.send(:var, {:key => key}, value.to_s)
         end
       end
     end

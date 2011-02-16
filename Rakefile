@@ -123,7 +123,7 @@ gemspec = Gem::Specification.new do |s|
   s.require_path = 'lib'
   s.test_files   = Dir[*['test/**/*_test.rb']]
 
-  s.add_runtime_dependency("builder")
+  s.add_runtime_dependency("nokogiri")
   s.add_runtime_dependency("activesupport")
   s.add_development_dependency("activerecord")
   s.add_development_dependency("actionpack")
@@ -188,7 +188,7 @@ end
 
 task :cucumber => [:gemspec, :vendor_test_gems]
 
-def run_rails_cucumbr_task(version, additional_cucumber_args)
+def run_rails_cucumber_task(version, additional_cucumber_args)
   puts "Testing Rails #{version}"
   if version.empty?
     raise "No Rails version specified - make sure ENV['RAILS_VERSION'] is set, e.g. with `rake cucumber:rails:all`"
@@ -202,14 +202,14 @@ def define_rails_cucumber_tasks(additional_cucumber_args = '')
     RAILS_VERSIONS.each do |version|
       desc "Test integration of the gem with Rails #{version}"
       task version => [:gemspec, :vendor_test_gems] do
-        exit 1 unless run_rails_cucumbr_task(version, additional_cucumber_args)
+        exit 1 unless run_rails_cucumber_task(version, additional_cucumber_args)
       end
     end
 
     desc "Test integration of the gem with all Rails versions"
     task :all do
       results = RAILS_VERSIONS.map do |version|
-        run_rails_cucumbr_task(version, additional_cucumber_args)
+        run_rails_cucumber_task(version, additional_cucumber_args)
       end
 
       exit 1 unless results.all?
