@@ -1,18 +1,18 @@
 # -*- encoding: utf-8 -*-
 $:.push File.expand_path("../lib", __FILE__)
 require "hoptoad_notifier/version"
-require "rake"
 
 Gem::Specification.new do |s|
   s.name        = %q{hoptoad_notifier}
   s.version     = HoptoadNotifier::VERSION
   s.summary     = %q{Send your application errors to our hosted service and reclaim your inbox.}
 
-  s.files        = FileList['[A-Z]*', 'generators/**/*.*', 'lib/**/*.rb',
-                            'test/**/*.rb', 'rails/**/*.rb', 'script/*',
-                            'lib/templates/*.erb']
   s.require_path = 'lib'
-  s.test_files   = Dir[*['test/**/*_test.rb']]
+
+  s.files         = `git ls-files`.split("\n")
+  s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
+  s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
+  s.require_paths = ["lib"]
 
   s.add_runtime_dependency("nokogiri")
   s.add_runtime_dependency("activesupport")
