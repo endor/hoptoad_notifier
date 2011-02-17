@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.require_path = 'lib'
   s.test_files   = Dir[*['test/**/*_test.rb']]
 
-  s.add_runtime_dependency("builder")
+  s.add_runtime_dependency("nokogiri")
   s.add_runtime_dependency("activesupport")
   s.add_development_dependency("activerecord")
   s.add_development_dependency("actionpack")
