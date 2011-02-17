@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 $:.push File.expand_path("../lib", __FILE__)
 require "hoptoad_notifier/version"
+require "rake"
 
 Gem::Specification.new do |s|
   s.name        = %q{hoptoad_notifier}
